@@ -2,8 +2,9 @@
 import * as mongoDB from "mongodb";
 import * as dotenv from "dotenv";
 import User from "../models/user";
+import Product from "../models/product";
 
-export const collections: { users?: mongoDB.Collection<User> } = {}
+export const collections: { users?: mongoDB.Collection<User>, product?: mongoDB.Collection<Product> } = {}
 
 export async function connectToDatabase () {
     dotenv.config();
@@ -17,14 +18,16 @@ export async function connectToDatabase () {
     await applySchemaValidation(db);
    
     const usersCollection: mongoDB.Collection<User> = db.collection<User>(process.env.USERS_COLLECTION_NAME || '');
+    const productCollection: mongoDB.Collection<Product> = db.collection<Product>(process.env.PRODUCT_COLLECTION_NAME || '');
  
     collections.users = usersCollection;
+    collections.product = productCollection;
        
     console.log(`Successfully connected to database: ${db.databaseName} and collection: ${usersCollection.collectionName}`);
  }
 
  async function applySchemaValidation(db: mongoDB.Db) {
-    const jsonSchema = {
+    const jsonUserSchema = {
         $jsonSchema: {
             bsonType: "object",
             required: ["chatID", "balance"],
@@ -33,7 +36,7 @@ export async function connectToDatabase () {
                 _id: {},
                 chatID: {
                     bsonType: "number",
-                    description: "'chatID' is required and is a string",
+                    description: "'chatID' is required and is a number",
                 },
                 balance: {
                     bsonType: "number",
@@ -43,13 +46,45 @@ export async function connectToDatabase () {
         },
     };
 
+    const jsonProductSchema = {
+        $jsonSchema: {
+            bsonType: "object",
+            required: ["name", "price", "amount"],
+            additionalProperties: false,
+            properties: {
+                _id: {},
+                name: {
+                    bsonType: "string",
+                    description: "'name' is required and is a string",
+                },
+                price: {
+                    bsonType: "number",
+                    description: "'price' is required and is a number",
+                },
+                amount: {
+                    bsonType: "number",
+                    description: "'amount' is required and is a number",
+                },
+            },
+        },
+    };
+
     // Try applying the modification to the collection, if the collection doesn't exist, create it 
    await db.command({
         collMod: process.env.USERS_COLLECTION_NAME,
-        validator: jsonSchema
+        validator: jsonUserSchema
     }).catch(async (error: mongoDB.MongoServerError) => {
         if (error.codeName === 'NamespaceNotFound') {
-            await db.createCollection(process.env.USERS_COLLECTION_NAME || '', {validator: jsonSchema});
+            await db.createCollection(process.env.USERS_COLLECTION_NAME || '', {validator: jsonUserSchema});
+        }
+    });
+
+    await db.command({
+        collMod: process.env.PRODUCT_COLLECTION_NAME,
+        validator: jsonProductSchema
+    }).catch(async (error: mongoDB.MongoServerError) => {
+        if (error.codeName === 'NamespaceNotFound') {
+            await db.createCollection(process.env.PRODUCT_COLLECTION_NAME || '', {validator: jsonProductSchema});
         }
     });
 }

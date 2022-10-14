@@ -1,5 +1,4 @@
 import express, { Request, Response } from "express";
-import { ObjectId } from "mongodb";
 import { collections } from "../services/db.service";
 import User from "../models/user";
 
@@ -51,10 +50,10 @@ usersRouter.put("/:id", async (req: Request, res: Response) => {
     const id = req?.params?.id;
 
     try {
-        const updatedGame: User = req.body as User;
-        const query = { _id: new ObjectId(id) };
+        const updatedUser: User = req.body as User;
+        const query = { chatID: Number(id) };
       
-        const result = await collections.users?.updateOne(query, { $set: updatedGame });
+        const result = await collections.users?.updateOne(query, { $set: updatedUser });
 
         result
             ? res.status(200).send(`Successfully updated user with id ${id}`)
@@ -69,7 +68,7 @@ usersRouter.delete("/:id", async (req: Request, res: Response) => {
     const id = req?.params?.id;
 
     try {
-        const query = { _id: new ObjectId(id) };
+        const query = { chatID: Number(id) };
         const result = await collections.users?.deleteOne(query);
 
         if (result && result.deletedCount) {

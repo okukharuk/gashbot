@@ -10,6 +10,7 @@ export const onStart = async(ctx: Context) => {
             return await ctx.reply(`Твій айді: ${ctx.chat?.id}\nБаланс: ${res.data.balance}`, 
             Markup.inlineKeyboard([
                 [Markup.button.callback('Back', 'back')],
+                [Markup.button.callback('Check', 'check')],
             ]))
         })
         .catch(async(err) => {
