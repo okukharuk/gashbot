@@ -1,22 +1,19 @@
 import axios from "axios"
 import { Context, Markup, Telegraf } from "telegraf"
-import { botDataProps } from "../bot"
 import dotenv from "dotenv"
 
-export const botActions = (bot: Telegraf<Context>, botData: botDataProps) => {
+export const botActions = (bot: Telegraf<Context>) => {
     dotenv.config();
-
+    try {
     bot.action('back', ctx => {
-        if (ctx.chat?.id)
-        bot.telegram.editMessageReplyMarkup(ctx.chat?.id || 0, botData.lastMessageID[ctx.chat?.id], '0', {
+        ctx.editMessageReplyMarkup({
             inline_keyboard : [
             [Markup.button.callback('Forward', 'forward')],
         ]
     })
     })
     bot.action('forward', ctx => {
-        if (ctx.chat?.id)
-        bot.telegram.editMessageReplyMarkup(ctx.chat?.id || 0, botData.lastMessageID[ctx.chat?.id], '0', {
+        ctx.editMessageReplyMarkup({
             inline_keyboard : [
             [Markup.button.callback('Back', 'back')],
         ]
@@ -69,4 +66,7 @@ export const botActions = (bot: Telegraf<Context>, botData: botDataProps) => {
             .then(res => console.log(res.data))
             .catch(err => console.log(err))*/
     })
+    } catch(err) {
+        console.log(err);
+    }
 } 

@@ -1,31 +1,25 @@
 import { Telegraf, Context } from "telegraf";
 import dotenv from "dotenv"
 import { launchDB } from "./database";
-import { onStart } from "./commands/start";
-import { botActions } from "./actions";
+import { onStart } from "./controllers/commands/command/start";
+import { botActions } from "./controllers/actions";
+import { isAdmin } from "./middleware/isAdmin";
+import { botCommands } from "./controllers/commands";
+import { botAdmin } from "./controllers/admin";
 
 dotenv.config()
 
-export interface botDataProps {
-    lastMessageID: Record<number, number>,
-}
-
 export const launchBot = async() => {
 
-    const bot = new Telegraf<Context>(process.env.BOT_TOKEN || ''); 
-    const botData: botDataProps = {
-        lastMessageID: {},
-    }
+    console.log(process.env.ADMIN_ID)
+
+    const bot = new Telegraf<Context>(process.env.BOT_TOKEN || '');
+
+    bot.use(isAdmin());
+    botCommands(bot);
+    botActions(bot);
+    botAdmin(bot);
     
-    bot.command('start' ,async(ctx) => {
-        const [key, value] = await onStart(ctx);
-        if(key && value)
-            botData.lastMessageID[key] = value;
-    });
-    bot.help((ctx) => ctx.reply('Send me a sticker'));
-    bot.on('sticker', (ctx) => ctx.reply('👍'));
-    bot.hears('hi', (ctx) => ctx.reply('Hey there'));
-    botActions(bot, botData);
     bot.launch();
 
     // Enable graceful stop
