@@ -3,8 +3,13 @@ import * as mongoDB from "mongodb";
 import * as dotenv from "dotenv";
 import User from "../models/user";
 import Product from "../models/product";
+import Place from "../models/place";
 
-export const collections: { users?: mongoDB.Collection<User>, product?: mongoDB.Collection<Product> } = {}
+export const collections: { 
+    users?: mongoDB.Collection<User>, 
+    product?: mongoDB.Collection<Product>,
+    place?: mongoDB.Collection<Place>
+} = {}
 
 export async function connectToDatabase () {
     dotenv.config();
@@ -19,9 +24,11 @@ export async function connectToDatabase () {
    
     const usersCollection: mongoDB.Collection<User> = db.collection<User>(process.env.USERS_COLLECTION_NAME || '');
     const productCollection: mongoDB.Collection<Product> = db.collection<Product>(process.env.PRODUCT_COLLECTION_NAME || '');
+    const placeCollection: mongoDB.Collection<Place> = db.collection<Place>(process.env.PLACE_COLLECTION_NAME || '');
  
     collections.users = usersCollection;
     collections.product = productCollection;
+    collections.place = placeCollection;
        
     console.log(`Successfully connected to database: ${db.databaseName} and collection: ${usersCollection.collectionName}`);
  }
@@ -49,10 +56,14 @@ export async function connectToDatabase () {
     const jsonProductSchema = {
         $jsonSchema: {
             bsonType: "object",
-            required: ["name", "price", "amount"],
+            required: ["place","name", "price", "amount"],
             additionalProperties: false,
             properties: {
                 _id: {},
+                place: {
+                    bsonType: "string",
+                    description: "'place' is required and is a string",
+                },
                 name: {
                     bsonType: "string",
                     description: "'name' is required and is a string",
@@ -64,6 +75,21 @@ export async function connectToDatabase () {
                 amount: {
                     bsonType: "number",
                     description: "'amount' is required and is a number",
+                },
+            },
+        },
+    };
+
+    const jsonPlaceSchema = {
+        $jsonSchema: {
+            bsonType: "object",
+            required: ["name"],
+            additionalProperties: false,
+            properties: {
+                _id: {},
+                name: {
+                    bsonType: "string",
+                    description: "'name' is required and is a number",
                 },
             },
         },
@@ -85,6 +111,15 @@ export async function connectToDatabase () {
     }).catch(async (error: mongoDB.MongoServerError) => {
         if (error.codeName === 'NamespaceNotFound') {
             await db.createCollection(process.env.PRODUCT_COLLECTION_NAME || '', {validator: jsonProductSchema});
+        }
+    });
+
+    await db.command({
+        collMod: process.env.PLACE_COLLECTION_NAME,
+        validator: jsonPlaceSchema
+    }).catch(async (error: mongoDB.MongoServerError) => {
+        if (error.codeName === 'NamespaceNotFound') {
+            await db.createCollection(process.env.PLACE_COLLECTION_NAME || '', {validator: jsonPlaceSchema});
         }
     });
 }

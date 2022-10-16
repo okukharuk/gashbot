@@ -2,34 +2,28 @@ import axios from "axios";
 import { Context, Markup } from "telegraf";
 import { InlineKeyboardButton } from "telegraf/typings/core/types/typegram";
 import Product from "../../../models/product";
-
-const getProductMarkup = async(): Promise<InlineKeyboardButton[][]> => {
-    return await (await axios.get('http://localhost:8080/product')).data.map((el: Product) => {
-        return [Markup.button.callback(el.name, el.name.toLowerCase())]
-    })
-
-}
+import { createUser, getPlaces, getProducts, getUser } from "../../../routes";
+import { MenuInterface } from "../../consts";
+import { getInlineKeyboard, getMarkup } from "../../utils";
 
 export const onStart = async(ctx: Context) => {
-    console.log(ctx.state.isAdmin)
-
-    await axios.get('http://localhost:8080/users/' + ctx.chat?.id, {timeout: 1000})
+    const placeMarkup: InlineKeyboardButton[][] = await getMarkup(' placeOpened', getPlaces);
+    await getUser(ctx.chat?.id || 0)
         .then(async(res) => {
-            const productMarkup: InlineKeyboardButton[][] = await getProductMarkup();
-            return await ctx.reply(`Твій айді: ${ctx.chat?.id}\nБаланс: ${res.data.balance}`, 
-                Markup.inlineKeyboard([
-                    ...productMarkup,
-                    [Markup.button.callback('Back', 'back')],
-                    [Markup.button.callback('Check', 'check')],
-                ])
+            return await ctx.reply(
+                MenuInterface(ctx.chat?.id || 0, res.data.balance), 
+                getInlineKeyboard(true, placeMarkup)
             )
         })
         .catch(async(err) => {
-            axios.post('http://localhost:8080/users', {
+            await createUser({
                 chatID: ctx.chat?.id || 0,
                 balance: 0
             })
-            return await ctx.reply(`Твій айді: ${ctx.chat?.id}\nБаланс: 0`)
+            return await ctx.reply(
+                MenuInterface(ctx.chat?.id || 0, 0), 
+                getInlineKeyboard(true, placeMarkup)
+            )
         })
     return;
 }

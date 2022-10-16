@@ -16,7 +16,23 @@ productRouter.get("/", async (_req: Request, res: Response) => {
     }
 });
 
-productRouter.get("/:name", async (req: Request, res: Response) => {
+productRouter.get("/place/:place", async (req: Request, res: Response) => {
+    const place = req?.params?.place;
+
+    try {
+        
+        const query = { place: place };
+        const products = (await collections.product?.find(query).toArray()) as Product[];
+
+        if (products) {
+            res.status(200).send(products);
+        }
+    } catch (error: any) {
+        res.status(404).send(`Unable to find matching document with id: ${req.params.id}`);
+    }
+});
+
+productRouter.get("/name/:name", async (req: Request, res: Response) => {
     const name = req?.params?.name;
 
     try {
