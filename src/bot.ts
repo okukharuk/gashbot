@@ -1,29 +1,26 @@
-import { Telegraf, Context } from "telegraf";
-import dotenv from "dotenv"
-import { launchDB } from "./database";
-import { onStart } from "./controllers/commands/command/start";
-import { botActions } from "./controllers/actions";
-import { isAdmin } from "./middleware/isAdmin";
-import { botCommands } from "./controllers/commands";
-import { botAdmin } from "./controllers/admin";
+import dotenv from 'dotenv';
+import { Context, Telegraf } from 'telegraf';
 
-dotenv.config()
+import { botActions } from './controllers/actions';
+import { botAdmin } from './controllers/admin';
+import { botCommands } from './controllers/commands';
+import { isAdmin } from './middleware/isAdmin';
 
-export const launchBot = async() => {
+dotenv.config();
 
-    console.log(process.env.ADMIN_ID)
+export const launchBot = async () => {
+  console.log(process.env.ADMIN_ID);
 
-    const bot = new Telegraf<Context>(process.env.BOT_TOKEN || '');
+  const bot = new Telegraf<Context>(process.env.BOT_TOKEN || "");
 
-    bot.use(isAdmin());
-    botCommands(bot);
-    botActions(bot);
-    botAdmin(bot);
-    
-    bot.launch();
+  bot.use(isAdmin());
+  botCommands(bot);
+  botActions(bot);
+  botAdmin(bot);
 
-    // Enable graceful stop
-    process.once('SIGINT', () => bot.stop('SIGINT'));
-    process.once('SIGTERM', () => bot.stop('SIGTERM'));
+  bot.launch();
 
-}
+  // Enable graceful stop
+  process.once("SIGINT", () => bot.stop("SIGINT"));
+  process.once("SIGTERM", () => bot.stop("SIGTERM"));
+};

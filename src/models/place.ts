@@ -1,8 +1,5 @@
-import { ObjectId } from "mongodb";
+import { ObjectId } from 'mongodb';
 
 export default class Place {
-    constructor(
-        public name: string,
-        public id?: ObjectId
-    ) {}
+  constructor(public name: string, public id?: ObjectId) {}
 }

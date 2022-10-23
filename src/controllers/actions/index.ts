@@ -1,43 +1,42 @@
-import axios from "axios"
-import { Context, Markup, Telegraf } from "telegraf"
-import dotenv from "dotenv"
+import dotenv from 'dotenv';
+import { Context, Markup, Telegraf } from 'telegraf';
 
 export const botActions = (bot: Telegraf<Context>) => {
-    dotenv.config();
-    try {
-    bot.action('back', ctx => {
-        ctx.editMessageReplyMarkup({
-            inline_keyboard : [
-            [Markup.button.callback('Forward', 'forward')],
-        ]
-    })
-    })
-    bot.action('forward', ctx => {
-        ctx.editMessageReplyMarkup({
-            inline_keyboard : [
-            [Markup.button.callback('Back', 'back')],
-        ]
-    })
-    })
-    bot.action('check', async(ctx) => {
-        /*axios.get('https://api-sandbox.nowpayments.io/v1/status')
+  dotenv.config();
+  try {
+    bot.action("back", (ctx: Context) => {
+      // console.log(ctx.state);
+      ctx.state.check = 1;
+      ctx.editMessageReplyMarkup({
+        inline_keyboard: [[Markup.button.callback("Forward", "forward")]],
+      });
+    });
+    bot.action("forward", (ctx) => {
+      //console.log(ctx.state);
+      ctx.state.check = 2;
+      ctx.editMessageReplyMarkup({
+        inline_keyboard: [[Markup.button.callback("Back", "back")]],
+      });
+    });
+    bot.action("check", async (ctx) => {
+      /*axios.get('https://api-sandbox.nowpayments.io/v1/status')
             .then(res => console.log(res.data))
             .catch(err => console.log(err))*/
-        /*axios.get('https://api-sandbox.nowpayments.io/v1/currencies', {
+      /*axios.get('https://api-sandbox.nowpayments.io/v1/currencies', {
             headers: {
                 'x-api-key': process.env.NOWPAY_DEMO
             }
         })
             .then(res => console.log(res.data))
             .catch(err => console.log(err))*/
-        /*axios.get('https://api-sandbox.nowpayments.io/v1/estimate?amount=4000&currency_from=usd&currency_to=usdttrc20', {
+      /*axios.get('https://api-sandbox.nowpayments.io/v1/estimate?amount=4000&currency_from=usd&currency_to=usdttrc20', {
             headers: {
                 'x-api-key': process.env.NOWPAY_DEMO
             }
         })
             .then(res => console.log(res.data))
             .catch(err => console.log(err))*/
-        /*const url = await axios.post('https://api.nowpayments.io/v1/invoice',
+      /*const url = await axios.post('https://api.nowpayments.io/v1/invoice',
         {
             "price_amount": 3,
             "price_currency": "usd",
@@ -58,15 +57,15 @@ export const botActions = (bot: Telegraf<Context>) => {
             })
             .catch(err => console.log(err))
         bot.telegram.sendMessage(ctx.chat?.id || '', url)*/
-        /*axios.get('https://api.nowpayments.io/v1/payment/4608951299', {
+      /*axios.get('https://api.nowpayments.io/v1/payment/4608951299', {
             headers: {
                 'x-api-key': process.env.NOWPAY_API
             }
         })
             .then(res => console.log(res.data))
             .catch(err => console.log(err))*/
-    })
-    } catch(err) {
-        console.log(err);
-    }
-} 
+    });
+  } catch (err) {
+    console.log(err);
+  }
+};

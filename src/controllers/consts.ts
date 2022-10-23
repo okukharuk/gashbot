@@ -1,5 +1,5 @@
-import { toCorrectLength } from "./utils"
+import { toCorrectLength } from './utils';
 
 export const MenuInterface = (id: number, balance: number) => {
-    return toCorrectLength([`Твій айді: ${id}`, `Твій баланс: ${balance}`])
-}
+  return toCorrectLength([`Твій айді: ${id}`, `Твій баланс: ${balance}`]);
+};
