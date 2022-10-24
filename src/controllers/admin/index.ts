@@ -4,7 +4,8 @@ import { Context, Markup, Telegraf } from 'telegraf';
 import Product from '../../models/product';
 import { createPlace, deleteProduct, getPlaces, getProducts, getProductsByPlace } from '../../routes';
 import { collections } from '../../services/db.service';
-import { getInlineKeyboard, getMarkup } from '../utils';
+import { getDynamicInlineKeyboard, getStaticInlineKeyboard } from '../markup';
+import { AdminItem, AdminUpdateItem } from '../markup/consts';
 
 interface updatePropertyProps {
   name: string;
@@ -48,22 +49,23 @@ export const botAdmin = (bot: Telegraf<Context>) => {
   });
 
   bot.on("callback_query", async (ctx) => {
-    const data = ctx.callbackQuery.data || "";
-    const info = data.split(" ");
+    const info = (ctx.callbackQuery.data || "").split(" ");
     const [label, type] = info;
-    switch (type) {
-      case "placeOpened":
-        const productMarkup = await getMarkup(
-          "",
-          async () => await getProductsByPlace(label)
-        );
-        console.log(productMarkup);
-        ctx.reply("choose wisely", getInlineKeyboard(true, productMarkup));
+    console.log(ctx.state);
+    console.log(ctx);
+    if (ctx.state.isAdmin) {
+      switch (type) {
+        case "placeOpened":
+          const inlineKeyboard = await getDynamicInlineKeyboard(
+            "",
+            async () => await getProductsByPlace(label)
+          );
+          ctx.editMessageText("choose wisely", inlineKeyboard);
+      }
     }
     if (ctx.state.isAdmin) {
       switch (type) {
-        case "adminPlaceOpened":
-          console.log("here");
+        case "AdminPlaceOpened":
           newItem.place = label;
           onChoosePlace(ctx);
           return;
@@ -137,20 +139,16 @@ export const botAdmin = (bot: Telegraf<Context>) => {
 };
 
 const onAdmin = async (ctx: Context) => {
-  const placesMarkup = await getMarkup(" adminPlaceOpened", getPlaces);
-  placesMarkup.push([Markup.button.callback("New place", "adminAddPlace")]);
-  ctx.reply("Choose place:", getInlineKeyboard(false, placesMarkup));
+  const inlineKeyboard = await getDynamicInlineKeyboard(
+    " AdminPlaceOpened",
+    getPlaces,
+    [[Markup.button.callback("New place", "adminAddPlace")]]
+  );
+  ctx.reply("Choose place:", inlineKeyboard);
 };
 
 const onChoosePlace = (ctx: Context) => {
-  ctx.editMessageText(
-    "Welcome Master",
-    Markup.inlineKeyboard([
-      [Markup.button.callback("Add item", "adminAddItem")],
-      [Markup.button.callback("Delete item", "adminDeleteItem")],
-      [Markup.button.callback("Update item", "adminUpdateItem")],
-    ])
-  );
+  ctx.editMessageText("Welcome Master", getStaticInlineKeyboard(AdminItem));
 };
 
 const onAddItem = (ctx: Context) => {
@@ -158,13 +156,19 @@ const onAddItem = (ctx: Context) => {
   ctx.sendMessage("Write item name:");
 };
 const onDeleteItem = async (ctx: Context) => {
-  const deleteProductMarkup = await getMarkup(" ProductDelete", getProducts);
-  ctx.reply(`Delete Item:`, getInlineKeyboard(true, deleteProductMarkup));
+  const inlineKeyboard = await getDynamicInlineKeyboard(
+    " ProductDelete",
+    getProducts
+  );
+  ctx.reply(`Delete Item:`, inlineKeyboard);
 };
 
 const onUpdateItem = async (ctx: Context) => {
-  const updateProductMarkup = await getMarkup(" ProductUpdate", getProducts);
-  ctx.reply(`Update Item:`, getInlineKeyboard(true, updateProductMarkup));
+  const inlineKeyboard = await getDynamicInlineKeyboard(
+    " ProductUpdate",
+    getProducts
+  );
+  ctx.reply(`Update Item:`, inlineKeyboard);
 };
 
 const onAddPlace = async (ctx: Context) => {
@@ -185,11 +189,7 @@ const onDeleteItemQuery = async (ctx: Context, name: string) => {
 const onUpdateItemQuery = async (ctx: Context, name: string) => {
   ctx.reply(
     "What property to change:",
-    Markup.inlineKeyboard([
-      [Markup.button.callback("Name", name + " ProductUpdateItem Name")],
-      [Markup.button.callback("Amount", name + " ProductUpdateItem Amount")],
-      [Markup.button.callback("Price", name + " ProductUpdateItem Price")],
-    ])
+    getStaticInlineKeyboard(AdminUpdateItem, name)
   );
 };
 
@@ -201,3 +201,5 @@ const onUpdatePropertyQuery = (ctx: Context, name: string, kind: string) => {
   };
   ctx.sendMessage("Write new property:");
 };
+
+const onCreateNewItem = () => {};
