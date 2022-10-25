@@ -19,9 +19,10 @@ export const botActions = (bot: Telegraf<Context>) => {
       });
     });
     bot.action("check", async (ctx) => {
-      /*axios.get('https://api-sandbox.nowpayments.io/v1/status')
-            .then(res => console.log(res.data))
-            .catch(err => console.log(err))*/
+      /*axios
+        .get("https://api-sandbox.nowpayments.io/v1/status")
+        .then((res) => console.log(res.data))
+        .catch((err) => console.log(err));*/
       /*axios.get('https://api-sandbox.nowpayments.io/v1/currencies', {
             headers: {
                 'x-api-key': process.env.NOWPAY_DEMO
@@ -36,34 +37,57 @@ export const botActions = (bot: Telegraf<Context>) => {
         })
             .then(res => console.log(res.data))
             .catch(err => console.log(err))*/
-      /*const url = await axios.post('https://api.nowpayments.io/v1/invoice',
-        {
-            "price_amount": 3,
-            "price_currency": "usd",
-            "pay_currency": "usdttrc20",
-            "order_id": "12345",
-            "order_description": "SCAM",
-            "success_url": "https://google.com",
-            "cancel_url": "https://google.com"
-        },
-        {
+      /*const url = await axios
+        .post(
+          "https://api.nowpayments.io/v1/invoice",
+          {
+            price_amount: 100,
+            price_currency: "usd",
+            pay_currency: "usdttrc20",
+            order_id: "12345",
+            order_description: "SCAM",
+            success_url: "https://google.com",
+            cancel_url: "https://google.com",
+          },
+          {
             headers: {
-                'x-api-key': process.env.NOWPAY_API
-            }
+              "x-api-key": process.env.NOWPAY_API,
+            },
+          }
+        )
+        .then((res) => {
+          console.log(res.data);
+          return res.data.invoice_url;
         })
-            .then(res => {
-                console.log(res.data)
-                return res.data.invoice_url
-            })
-            .catch(err => console.log(err))
-        bot.telegram.sendMessage(ctx.chat?.id || '', url)*/
-      /*axios.get('https://api.nowpayments.io/v1/payment/4608951299', {
+        .catch((err) => console.log(err));
+      bot.telegram.sendMessage(ctx.chat?.id || "", url);*/
+      /*axios
+        .get("https://api.nowpayments.io/v1/payment/5716786276", {
+          headers: {
+            "x-api-key": process.env.NOWPAY_API,
+          },
+        })
+        .then((res) => console.log(res.data))
+        .catch((err) => console.log(err));*/
+      /*const url = await axios
+        .post(
+          "https://api.nowpayments.io/v1/invoice-payment",
+          {
+            iid: 5973372329,
+            pay_currency: "usdttrc20",
+          },
+          {
             headers: {
-                'x-api-key': process.env.NOWPAY_API
-            }
+              "x-api-key": process.env.NOWPAY_API,
+            },
+          }
+        )
+        .then((res) => {
+          console.log(res.data);
+          return `https://nowpayments.io/payment/?iid=5973372329&paymentId=${res.data.payment_id}`;
         })
-            .then(res => console.log(res.data))
-            .catch(err => console.log(err))*/
+        .catch((err) => console.log(err));
+      bot.telegram.sendMessage(ctx.chat?.id || "", url || "");*/
     });
   } catch (err) {
     console.log(err);

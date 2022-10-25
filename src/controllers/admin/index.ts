@@ -2,9 +2,18 @@ import axios from 'axios';
 import { Context, Markup, Telegraf } from 'telegraf';
 
 import Product from '../../models/product';
-import { createPlace, deleteProduct, getPlaces, getProducts, getProductsByPlace } from '../../routes';
+import {
+  createInvoice,
+  createInvoicePayment,
+  createPlace,
+  deleteProduct,
+  getPlaces,
+  getProduct,
+  getProductsByPlace,
+} from '../../routes';
 import { collections } from '../../services/db.service';
-import { getDynamicInlineKeyboard, getStaticInlineKeyboard } from '../markup';
+import { onStart } from '../commands/command/start';
+import { getBackButton, getDynamicInlineKeyboard, getStaticInlineKeyboard } from '../markup';
 import { AdminItem, AdminUpdateItem } from '../markup/consts';
 
 interface updatePropertyProps {
@@ -21,6 +30,7 @@ export const botAdmin = (bot: Telegraf<Context>) => {
     name: "",
     price: 0,
     amount: 0,
+    iid: 0,
   };
 
   bot.command("admin", (ctx) => {
@@ -33,16 +43,6 @@ export const botAdmin = (bot: Telegraf<Context>) => {
     return;
   });
 
-  bot.action("adminDeleteItem", (ctx) => {
-    if (ctx.state.isAdmin) onDeleteItem(ctx);
-    return;
-  });
-
-  bot.action("adminUpdateItem", (ctx) => {
-    if (ctx.state.isAdmin) onUpdateItem(ctx);
-    return;
-  });
-
   bot.action("adminAddPlace", (ctx) => {
     if (ctx.state.isAdmin) onAddPlace(ctx);
     return;
@@ -51,23 +51,38 @@ export const botAdmin = (bot: Telegraf<Context>) => {
   bot.on("callback_query", async (ctx) => {
     const info = (ctx.callbackQuery.data || "").split(" ");
     const [label, type] = info;
-    console.log(ctx.state);
-    console.log(ctx);
-    if (ctx.state.isAdmin) {
-      switch (type) {
-        case "placeOpened":
-          const inlineKeyboard = await getDynamicInlineKeyboard(
-            "",
-            async () => await getProductsByPlace(label)
-          );
-          ctx.editMessageText("choose wisely", inlineKeyboard);
-      }
+
+    switch (type) {
+      case "PlaceOpened":
+        const inlineKeyboard = await getDynamicInlineKeyboard(
+          " ProductChosen",
+          async () => await getProductsByPlace(label),
+          undefined,
+          getBackButton((ctx.callbackQuery && ctx.callbackQuery.data) || "")
+        );
+        ctx.editMessageText("choose wisely", inlineKeyboard);
+        return;
+      case "StartOpened":
+        onStart(ctx);
+        return;
+      case "ProductChosen":
+        const chosenProduct = await getProduct(label);
+        console.log(chosenProduct);
+        const paymentURL = await createInvoicePayment(chosenProduct.data.iid);
+        ctx.sendMessage(
+          "Щоб оплатити перейдіть по ссилці та пройдіть вказані в ній інструкції: " +
+            paymentURL
+        );
     }
+
     if (ctx.state.isAdmin) {
       switch (type) {
+        case "AdminOpened":
+          onAdmin(ctx);
+          return;
         case "AdminPlaceOpened":
           newItem.place = label;
-          onChoosePlace(ctx);
+          onChoosePlace(ctx, label);
           return;
         case "ProductDelete":
           onDeleteItemQuery(ctx, label);
@@ -77,6 +92,15 @@ export const botAdmin = (bot: Telegraf<Context>) => {
           return;
         case "ProductUpdateItem":
           onUpdatePropertyQuery(ctx, label, info[2]);
+          return;
+        case "AdminAddItem":
+          onAddItem(ctx);
+          return;
+        case "AdminDeleteItem":
+          onDeleteItem(ctx, label);
+          return;
+        case "AdminUpdateItem":
+          onUpdateItem(ctx, label);
           return;
       }
     }
@@ -98,6 +122,12 @@ export const botAdmin = (bot: Telegraf<Context>) => {
         case "addItemAmount":
           newItem.amount = Number(ctx.message.text);
           textInputType[ctx.chat?.id || 0] = "";
+          const iid = await createInvoice(newItem.price, newItem.name);
+          if (iid == null) {
+            ctx.sendMessage("Item was not created");
+            return;
+          }
+          newItem.iid = Number(iid);
           await axios
             .post("http://localhost:8080/product", newItem)
             .then((res) => {
@@ -144,31 +174,46 @@ const onAdmin = async (ctx: Context) => {
     getPlaces,
     [[Markup.button.callback("New place", "adminAddPlace")]]
   );
-  ctx.reply("Choose place:", inlineKeyboard);
+  ctx.callbackQuery
+    ? ctx.editMessageText("Choose place:", inlineKeyboard)
+    : ctx.reply("Choose place:", inlineKeyboard);
 };
 
-const onChoosePlace = (ctx: Context) => {
-  ctx.editMessageText("Welcome Master", getStaticInlineKeyboard(AdminItem));
+const onChoosePlace = (ctx: Context, label: string) => {
+  console.log(ctx);
+  ctx.editMessageText(
+    "Welcome Master",
+    getStaticInlineKeyboard(
+      AdminItem,
+      label,
+      getBackButton((ctx.callbackQuery && ctx.callbackQuery.data) || "")
+    )
+  );
 };
 
 const onAddItem = (ctx: Context) => {
   textInputType[ctx.chat?.id || 0] = "addItemName";
   ctx.sendMessage("Write item name:");
 };
-const onDeleteItem = async (ctx: Context) => {
+
+const onDeleteItem = async (ctx: Context, label: string) => {
   const inlineKeyboard = await getDynamicInlineKeyboard(
     " ProductDelete",
-    getProducts
+    () => getProductsByPlace(label),
+    undefined,
+    getBackButton((ctx.callbackQuery && ctx.callbackQuery.data) || "")
   );
-  ctx.reply(`Delete Item:`, inlineKeyboard);
+  ctx.editMessageText(`Delete Item:`, inlineKeyboard);
 };
 
-const onUpdateItem = async (ctx: Context) => {
+const onUpdateItem = async (ctx: Context, label: string) => {
   const inlineKeyboard = await getDynamicInlineKeyboard(
     " ProductUpdate",
-    getProducts
+    () => getProductsByPlace(label),
+    undefined,
+    getBackButton((ctx.callbackQuery && ctx.callbackQuery.data) || "")
   );
-  ctx.reply(`Update Item:`, inlineKeyboard);
+  ctx.editMessageText(`Update Item:`, inlineKeyboard);
 };
 
 const onAddPlace = async (ctx: Context) => {

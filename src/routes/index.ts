@@ -67,3 +67,49 @@ export const createPlace = async (newPlace: Place) => {
   const result = await collections.place?.insertOne(newPlace);
   return result ? true : false;
 };
+
+export const createInvoice = async (price: number, name: string) => {
+  return await axios
+    .post(
+      "https://api.nowpayments.io/v1/invoice",
+      {
+        price_amount: price,
+        price_currency: "usd",
+        pay_currency: "usdttrc20",
+        order_description: name,
+      },
+      {
+        headers: {
+          "x-api-key": process.env.NOWPAY_API,
+        },
+      }
+    )
+    .then((res) => {
+      console.log(res.data);
+      return res.data.id;
+    })
+    .catch((err) => {
+      return null;
+    });
+};
+
+export const createInvoicePayment = async (iid: number) => {
+  return await axios
+    .post(
+      "https://api.nowpayments.io/v1/invoice-payment",
+      {
+        iid: iid,
+        pay_currency: "usdttrc20",
+      },
+      {
+        headers: {
+          "x-api-key": process.env.NOWPAY_API,
+        },
+      }
+    )
+    .then((res) => {
+      console.log(res.data);
+      return `https://nowpayments.io/payment/?iid=${iid}&paymentId=${res.data.payment_id}`;
+    })
+    .catch((err) => console.log(err));
+};

@@ -3,22 +3,31 @@ import { InlineKeyboardButton, InlineKeyboardMarkup } from 'telegraf/typings/cor
 
 import Place from '../../models/place';
 import Product from '../../models/product';
+import { BackMarkup } from './consts';
 
 export const getStaticInlineKeyboard = (
   markup: Record<string, string>,
-  label?: string
+  label?: string,
+  backMarkup?: InlineKeyboardButton.CallbackButton[]
 ) => {
-  return Markup.inlineKeyboard(
+  console.log(
     Object.entries(markup).map((data) => {
-      return [Markup.button.callback(data[0], label + data[1])];
+      return [Markup.button.callback(data[0], (label || "") + data[1])];
     })
   );
+  return Markup.inlineKeyboard([
+    ...Object.entries(markup).map((data) => {
+      return [Markup.button.callback(data[0], (label || "") + data[1])];
+    }),
+    backMarkup ? backMarkup : [],
+  ]);
 };
 
 export const getDynamicInlineKeyboard = async (
   cb_type: string,
   getItems: () => Promise<any>,
-  additionalMarkup?: InlineKeyboardButton.CallbackButton[][]
+  additionalMarkup?: InlineKeyboardButton.CallbackButton[][],
+  backMarkup?: InlineKeyboardButton.CallbackButton[]
 ): Promise<Markup.Markup<InlineKeyboardMarkup>> => {
   return Markup.inlineKeyboard([
     ...(await (
@@ -27,6 +36,7 @@ export const getDynamicInlineKeyboard = async (
       return [Markup.button.callback(el.name, el.name + cb_type)];
     })),
     ...(additionalMarkup ? additionalMarkup : []),
+    backMarkup ? backMarkup : [],
   ]);
 };
 
@@ -42,4 +52,10 @@ export const getInlineKeyboard = (
 
 export const simpleMarkupButton = (label: string) => {
   return [Markup.button.callback(label, label.toLowerCase())];
+};
+
+export const getBackButton = (data: string) => {
+  const info = data.split(" ");
+  const [label, type] = info;
+  return [Markup.button.callback("Back", label + " " + BackMarkup[type])];
 };
